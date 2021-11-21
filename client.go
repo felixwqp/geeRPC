@@ -79,7 +79,7 @@ func (client *Client) removeCall(seq uint64) *Call {
 	defer client.mu.Unlock()
 	call, err := client.pending[seq]
 	if !err {
-		fmt.Printf("seq %d is not a pending call's seq")
+		fmt.Printf("seq %d is not a pending call's seq", seq)
 	}
 	delete(client.pending, seq)
 	return call
