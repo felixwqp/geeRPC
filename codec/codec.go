@@ -5,7 +5,7 @@ import "io"
 type Header struct {
 	ServiceMethod string // should follow "Service.Method"
 	Seq           uint64 // sequence number chosen by client, reqId for differnet req
-	error         string
+	Error         string
 }
 
 type Codec interface {
