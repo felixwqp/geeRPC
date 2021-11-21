@@ -25,3 +25,7 @@ type request struct {
 ```
 
 readRequest 方法中最重要的部分，即通过 newArgv() 和 newReplyv() 两个方法创建出两个入参实例，然后通过 cc.ReadBody() 将请求报文反序列化为第一个入参 argv，在这里同样需要注意 argv 可能是值类型，也可能是指针类型，所以处理方式有点差异。
+
+
+
+server add the service to ServiceMap during the registration.
