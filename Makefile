@@ -1,6 +1,3 @@
-hello:
-	echo "Hello Go Makefile"
-
 build:
 	go build -o bin/main main.go
 
