@@ -65,13 +65,15 @@ func (client *Client) Close() error {
 }
 
 func (client *Client) IsAvailable() bool {
-	return !client.shutdown || !client.closing
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	return !client.shutdown && !client.closing
 }
 
 func (client *Client) registerCall(call *Call) (uint64, error) {
 	client.mu.Lock()
 	defer client.mu.Unlock()
-	if !client.IsAvailable() {
+	if client.shutdown || client.closing {
 		return 0, ErrShutdown
 	}
 	call.Seq = client.seq
