@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"github.com/felixwqp/geerpc"
+	"github.com/felixwqp/geerpc/registry"
 	"github.com/felixwqp/geerpc/xclient"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -24,28 +26,29 @@ func (f Foo) Sleep(args Args, reply *int) error {
 	return nil
 }
 
+func startRegistry(wg *sync.WaitGroup) {
+	l, _ := net.Listen("tcp", ":9999")
+	registry.HandleHTTP()
+	wg.Done()
+	_ = http.Serve(l, nil)
+}
 
-func startServer(addr chan string) {
-	// pick a free port
-	// You may use port 0 to indicate you're not specifying an exact port but you want a free, available port selected by the system:
-	// start a listeners,
-
+func startServer(registryAddr string, wg *sync.WaitGroup) {
+	var foo Foo
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
 		log.Fatal("network error:", err)
 	}
 	log.Println("start rpc server on", l.Addr())
-	// bind the port to a certain process,
-
-
 	server := geerpc.NewServer()
-	var foo Foo
 	if err := server.Register(&foo); err != nil{
 		log.Fatal("Register Error: ", err)
 	}
-	addr <- l.Addr().String()
+	registry.Heartbeat(registryAddr, "tcp@"+l.Addr().String(), 0)
+	wg.Done()
 	server.Accept(l)
 }
+
 
 func xclient_call_wrapper(xc *xclient.XClient, ctx context.Context, typ, serviceMethod string, args *Args) {
 	var reply int
@@ -63,8 +66,8 @@ func xclient_call_wrapper(xc *xclient.XClient, ctx context.Context, typ, service
 	}
 }
 
-func call(addr1, addr2 string) {
-	d:= xclient.NewMultiServerDiscovery([]string{"tcp@" + addr1, "tcp@" + addr2})
+func call(registry string) {
+	d:= xclient.NewRegistryDiscovery(registry, 0)
 	xc := xclient.NewXClient(d, xclient.RandomSelect, nil)
 	defer func() { _ = xc.Close() }()
 
@@ -80,8 +83,8 @@ func call(addr1, addr2 string) {
 	wg.Wait()
 }
 
-func broadcast(addr1, addr2 string) {
-	d := xclient.NewMultiServerDiscovery([]string{"tcp@" + addr1, "tcp@" + addr2})
+func broadcast(registry string) {
+	d:= xclient.NewRegistryDiscovery(registry, 0)
 	xc := xclient.NewXClient(d, xclient.RandomSelect, nil)
 	defer func() { _ = xc.Close() }()
 	var wg sync.WaitGroup
@@ -100,16 +103,19 @@ func broadcast(addr1, addr2 string) {
 
 func main() {
 	log.SetFlags(0)
-	ch1 := make(chan string)
-	ch2 := make(chan string)
-	// start two servers
-	go startServer(ch1)
-	go startServer(ch2)
-
-	addr1 := <-ch1
-	addr2 := <-ch2
+	registryAddr := "http://localhost:9999/_geerpc_/registry"
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go startRegistry(&wg)
+	wg.Wait()
 
 	time.Sleep(time.Second)
-	call(addr1, addr2)
-	broadcast(addr1, addr2)
+	wg.Add(2)
+	go startServer(registryAddr, &wg)
+	go startServer(registryAddr, &wg)
+	wg.Wait()
+
+	time.Sleep(time.Second)
+	call(registryAddr)
+	broadcast(registryAddr)
 }
