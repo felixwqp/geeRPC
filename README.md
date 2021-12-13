@@ -18,6 +18,13 @@ More details:
 - [Service Lookup via Reflection](doc/ServiceRegister.md)
 
 
+Partial UMLs:
+- Server UML: 
+![Server](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/felixwqp/geeRPC/main/doc/plantuml/server.puml)
+
+- Client UML: 
+![Client](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/felixwqp/geeRPC/main/doc/plantuml/client.puml)
+
 
 Start the demo
 ```shell
