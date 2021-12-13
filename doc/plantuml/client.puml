@@ -1,0 +1,31 @@
+@startuml
+class Client{
+- cc       codec.Codec
+- opt      *Option
+- sending  sync.Mutex
+- header   codec.Header
+- mu       sync.Mutex
+- seq      uint64
+- pending  map[uint64]*Call \n//*seq is used to navigate the Call \nwhen receive find find new id From Header
+- closing  bool
+- shutdown bool
+
++ Call(ctx context.Context, serviceMethod string, args, reply interface{}) error
++ Go(serviceMethod string, args, reply interface{}, done chan *Call) *Call \n //wrap all content to a Call object and send Call \nreturn when Call received(succ or fail) or Timeout By Context
+- send(call *Call)
+- receive() \n//a goroutine launched when Client is created to monitor the cc conn,\n read header and body to write to call.Reply
+
+}
+
+class Call{
++ Seq           uint64
++ ServiceMethod string      // "<service>.<method>"
++ Args          interface{} // arguments to the function
++ Reply         interface{} // reply from the function
++ Error         error       // if error occurs, it will be set
++ Done          chan *Call  // done when call is complete
++ done() // set Done, called when the receive() get the Call
+}
+
+Client *-right- Call
+@enduml

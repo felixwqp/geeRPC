@@ -278,6 +278,7 @@ func (client *Client) send(call *Call) {
 	}
 
 	// prepare request header
+	// this is reused for each call.
 	client.header.ServiceMethod = call.ServiceMethod
 	client.header.Seq = seq
 	client.header.Error = ""

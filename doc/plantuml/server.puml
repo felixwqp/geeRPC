@@ -1,0 +1,56 @@
+@startuml
+entity NewCodecFuncMap {
++ map[Type]NewCodecFunc
+}
+
+
+class Server{
++ Accept(net.Listener)\n//generate goroutine to process \nincoming Connection to current port
++ Register(rcvr interface{})
+
+- ServeConn(io.ReadWriteCloser) \n//goroutine function\njson decode the metadata, get decode method\nread/handle/response request header & body
+
+
+- serviceMap sync.Map[string]*service
+}
+
+
+class service {
++name   string
++typ    reflect.Type
++rcvr   reflect.Value
++method map[string]*methodType
++ newService(rcvr interface{}) *service
+- registerMethods() \n// give method map the methodType
+}
+
+class methodType{
++ method 		reflect.Method
++ ArgType 	reflect.Type
++ ReplyType	reflect.Type
++ numCalls	uint64
+}
+
+class GobCodec{
++ conn io.ReadWriteCloser
++ buf  *bufio.Writer
++ dec  *gob.Decoder
++ enc  *gob.Encoder
+}
+
+class request {
++ h            *codec.Header \n// header of request
++ argv, replyv reflect.Value \n// argv and replyv of request
++ mtype        *methodType
++ svc          *service
+}
+
+
+
+service -up-* Server
+methodType --* service
+
+GobCodec -* NewCodecFuncMap
+request o-up- service
+request o-up- methodType
+@enduml
